@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Space Diagnosis</title>
+  <style>
+    :root {
+      --paper: #f3f3f0;
+      --paper-soft: #ecece7;
+      --ink: #1b1c19;
+      --muted: #73746f;
+      --line: #d8d8d1;
+      --hairline: #c8c8c1;
+      --white: #ffffff;
+      --ease: cubic-bezier(.22, .61, .36, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .shell {
+      min-height: 100dvh;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 42%),
+        var(--paper);
+    }
+
+    .phone {
+      position: relative;
+      width: min(100%, 430px);
+      min-height: 100dvh;
+      overflow: hidden;
+      padding: 28px 26px calc(28px + env(safe-area-inset-bottom));
+    }
+
+    .serif {
+      font-family: "Segoe UI Light", "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      font-weight: 300;
+      letter-spacing: -.035em;
+    }
+
+    .screen {
+      display: none;
+      min-height: calc(100dvh - 56px - env(safe-area-inset-bottom));
+      animation: enter .32s var(--ease) both;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen.back {
+      animation-name: enterBack;
+    }
+
+    @keyframes enter {
+      from {
+        opacity: 0;
+        transform: translateX(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes enterBack {
+      from {
+        opacity: 0;
+        transform: translateX(-18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .home {
+      justify-content: flex-start;
+      padding-top: min(24dvh, 178px);
+      padding-bottom: 72px;
+    }
+
+    .brand-title {
+      margin: 0 0 48px;
+      font-size: clamp(48px, 13.6vw, 66px);
+      line-height: .96;
+      max-width: 8.2ch;
+    }
+
+    .intro {
+      max-width: 17.6rem;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.78;
+    }
+
+    .intro p {
+      margin: 0 0 22px;
+    }
+
+    .inline-action {
+      margin-top: 18px;
+      min-width: 0;
+      min-height: 38px;
+      padding: 8px 0 7px;
+      border: 0;
+      border-bottom: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      font-size: 12px;
+      letter-spacing: .08em;
+      cursor: pointer;
+      transition: background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+    }
+
+    .inline-action:active,
+    .nav-btn:active,
+    .save-btn:active {
+      transform: translateY(1px);
+    }
+
+    .inline-action:hover {
+      color: var(--ink);
+    }
+
+    .nav-btn.ready:hover,
+    .save-btn:hover {
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    .progress {
+      padding-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .08em;
+    }
+
+    .question-screen {
+      justify-content: space-between;
+      gap: 28px;
+    }
+
+    .question-body {
+      padding-top: min(17dvh, 112px);
+    }
+
+    .question-title {
+      margin: 0 0 44px;
+      max-width: 20.5rem;
+      font-size: 23px;
+      line-height: 1.52;
+      font-weight: 400;
+    }
+
+    .options {
+      display: grid;
+      gap: 12px;
+    }
+
+    .option {
+      position: relative;
+      width: 100%;
+      min-height: 60px;
+      padding: 13px 14px 13px 22px;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      display: block;
+      transition: background .18s var(--ease), color .18s var(--ease);
+    }
+
+    .option::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 12px;
+      bottom: 12px;
+      width: 2px;
+      background: transparent;
+      transition: background .18s var(--ease);
+    }
+
+    .option:hover {
+      background: rgba(27, 28, 25, .035);
+    }
+
+    .option.selected {
+      background: rgba(27, 28, 25, .055);
+    }
+
+    .option.selected::before {
+      background: var(--ink);
+    }
+
+    .option-letter {
+      display: block;
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .16em;
+      line-height: 1.2;
+    }
+
+    .option-text {
+      display: block;
+      font-size: 15px;
+      line-height: 1.68;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 48px;
+      padding-top: 22px;
+    }
+
+    .nav-btn {
+      min-width: 72px;
+      max-width: 154px;
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 1px solid var(--hairline);
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .1em;
+      line-height: 1.35;
+      cursor: pointer;
+      transition: border .18s var(--ease), background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+    }
+
+    .nav-btn.ready {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .nav-btn.dark {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    .nav-btn:disabled {
+      cursor: default;
+      opacity: .45;
+    }
+
+    .nav-spacer {
+      width: 72px;
+      height: 42px;
+    }
+
+    .reading-screen {
+      padding-top: 66px;
+      padding-bottom: 24px;
+    }
+
+    .section-title {
+      margin: 0 0 34px;
+      font-size: 42px;
+      line-height: .98;
+    }
+
+    .quiet-copy {
+      margin: 0 0 30px;
+      max-width: 21rem;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    .material-list {
+      margin: 0 0 34px;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid var(--line);
+    }
+
+    .material-list li {
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 15px;
+      line-height: 1.58;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 10px 0 30px;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.62;
+      cursor: pointer;
+    }
+
+    .box {
+      position: relative;
+      flex: 0 0 auto;
+      width: 17px;
+      height: 17px;
+      margin-top: 2px;
+      border: 1px solid var(--ink);
+      background: transparent;
+      transition: background .18s var(--ease);
+    }
+
+    .check-row.checked .box {
+      background: var(--ink);
+    }
+
+    .check-row.checked .box::after {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid var(--white);
+      border-width: 0 1px 1px 0;
+      transform: rotate(45deg);
+    }
+
+    .consent-copy {
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.86;
+    }
+
+    .consent-copy p {
+      margin: 0 0 18px;
+    }
+
+    .consent-copy ol {
+      margin: 0 0 24px;
+      padding-left: 20px;
+    }
+
+    .consent-copy li {
+      margin-bottom: 14px;
+    }
+
+    .success-screen {
+      padding-top: 58px;
+      padding-bottom: 24px;
+    }
+
+    .success-title {
+      margin: 0 0 26px;
+      font-size: 27px;
+      line-height: 1.34;
+      font-weight: 400;
+    }
+
+    .receipt {
+      margin: 28px 0 24px;
+      padding: 28px 22px;
+      background: #f7f7f4;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .receipt.is-hidden {
+      display: none;
+    }
+
+    .receipt-image {
+      display: block;
+      width: 100%;
+      margin: 28px 0 24px;
+      border: 1px solid var(--line);
+      background: #f7f7f4;
+    }
+
+    .receipt-image[hidden] {
+      display: none;
+    }
+
+    .receipt-brand {
+      margin: 0 0 22px;
+      font-size: 31px;
+      line-height: .98;
+      max-width: 8.2ch;
+    }
+
+    .receipt h3 {
+      margin: 0 0 5px;
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    .receipt-time {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .receipt-item {
+      padding: 17px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .receipt-num {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .12em;
+    }
+
+    .receipt-question {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.62;
+    }
+
+    .receipt-answer {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.68;
+    }
+
+    .save-btn {
+      min-width: 86px;
+      min-height: 42px;
+      padding: 10px 18px;
+      border: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+    }
+
+    .save-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    @media (max-height: 720px) {
+      .question-body {
+        padding-top: 72px;
+      }
+
+      .question-title {
+        margin-bottom: 30px;
+        font-size: 22px;
+      }
+
+      .option {
+        min-height: 58px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .option-text {
+        font-size: 14px;
+        line-height: 1.55;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="phone" id="app">
+      <section class="screen home active" data-screen="home">
+        <div>
+          <h1 class="brand-title serif">Space Diagnosis</h1>
+          <div class="intro">
+            <p>您好，为了更好地完成本次空间诊断，我们需要先简单了解您和这间居所的基础情况。</p>
+            <p>请您根据每题内容，选择最接近您的答案即可。若没有完全符合的选项，后续我们会在微信里继续沟通。</p>
+          </div>
+          <button class="inline-action" type="button" data-go="q1">START</button>
+        </div>
+      </section>
+
+      <section class="screen question-screen" data-screen="q1">
+        <div>
+          <div class="progress">01 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">这间居所对您来说，最接近哪一种意义？</h2>
+            <div class="options" data-question="q1">
+              <button class="option" type="button" data-value="A. 长期陪伴：希望它有质感、有沉淀，住很多年也不过时">
+                <span class="option-letter">A</span>
+                <span class="option-text">长期陪伴：希望它有质感、有沉淀，住很多年也不过时</span>
+              </button>
+              <button class="option" type="button" data-value="B. 生活进阶：希望它承接一路走来的成果，让生活质感进入新的阶段">
+                <span class="option-letter">B</span>
+                <span class="option-text">生活进阶：希望它承接一路走来的成果，让生活质感进入新的阶段</span>
+              </button>
+              <button class="option" type="button" data-value="C. 家庭本位：不希望为了审美而舍弃空间的牺牲">
+                <span class="option-letter">C</span>
+                <span class="option-text">家庭本位：不希望为了审美而舍弃空间的牺牲</span>
+              </button>
+              <button class="option" type="button" data-value="D. 阶段持有：考虑到未来可能转置，希望在当下使用与投入之间取得更好的平衡">
+                <span class="option-letter">D</span>
+                <span class="option-text">阶段持有：考虑到未来可能转置，希望在当下使用与投入之间取得更好的平衡</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <span class="nav-spacer"></span>
+          <button class="nav-btn" type="button" data-next="q2" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q2">
+        <div>
+          <div class="progress">02 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">这间居所主要会服务谁？</h2>
+            <div class="options" data-question="q2">
+              <button class="option" type="button" data-value="A. 我一个人">
+                <span class="option-letter">A</span>
+                <span class="option-text">我一个人</span>
+              </button>
+              <button class="option" type="button" data-value="B. 我和伴侣">
+                <span class="option-letter">B</span>
+                <span class="option-text">我和伴侣</span>
+              </button>
+              <button class="option" type="button" data-value="C. 我和伴侣，以及孩子">
+                <span class="option-letter">C</span>
+                <span class="option-text">我和伴侣，以及孩子</span>
+              </button>
+              <button class="option" type="button" data-value="D. 多代同住，或有宠物共同生活">
+                <span class="option-letter">D</span>
+                <span class="option-text">多代同住，或有宠物共同生活</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q1">BACK</button>
+          <button class="nav-btn" type="button" data-next="q3" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q3">
+        <div>
+          <div class="progress">03 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">项目目前处于哪一阶段？</h2>
+            <div class="options" data-question="q3">
+              <button class="option" type="button" data-value="A. 尚未确定设计师及施工单位，希望先判断整体方向">
+                <span class="option-letter">A</span>
+                <span class="option-text">尚未确定设计师及施工单位，希望先判断整体方向</span>
+              </button>
+              <button class="option" type="button" data-value="B. 已确定设计师及施工单位，但设计方案尚未最终确定">
+                <span class="option-letter">B</span>
+                <span class="option-text">已确定设计师及施工单位，但设计方案尚未最终确定</span>
+              </button>
+              <button class="option" type="button" data-value="C. 已持有平面图、效果图或施工图，但施工尚未开始，正在犹豫是否继续推进">
+                <span class="option-letter">C</span>
+                <span class="option-text">已持有平面图、效果图或施工图，但施工尚未开始，正在犹豫是否继续推进</span>
+              </button>
+              <button class="option" type="button" data-value="D. 已进入施工阶段，但发现效果并不是自己想要的">
+                <span class="option-letter">D</span>
+                <span class="option-text">已进入施工阶段，但发现效果并不是自己想要的</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q2">BACK</button>
+          <button class="nav-btn" type="button" data-next="q4" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q4">
+        <div>
+          <div class="progress">04 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">如果全家人一起投票，只能选择一个旅行目的地，最后更可能会选择哪里？</h2>
+            <div class="options" data-question="q4">
+              <button class="option" type="button" data-value="A. 雪山、草原、沙漠或海边，更自然、更原始的地方">
+                <span class="option-letter">A</span>
+                <span class="option-text">雪山、草原、沙漠或海边，更自然、更原始的地方</span>
+              </button>
+              <button class="option" type="button" data-value="B. 拉斯维加斯、迪拜或澳门，璀璨流光、声色繁华的城市">
+                <span class="option-letter">B</span>
+                <span class="option-text">拉斯维加斯、迪拜或澳门，璀璨流光、声色繁华的城市</span>
+              </button>
+              <button class="option" type="button" data-value="C. 佛罗伦萨、京都或布宜诺斯艾利斯，闲意安然、文艺小众的城市">
+                <span class="option-letter">C</span>
+                <span class="option-text">佛罗伦萨、京都或布宜诺斯艾利斯，闲意安然、文艺小众的城市</span>
+              </button>
+              <button class="option" type="button" data-value="D. 大家会提意见，但最后通常是谁出钱听谁的">
+                <span class="option-letter">D</span>
+                <span class="option-text">大家会提意见，但最后通常是谁出钱听谁的</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q3">BACK</button>
+          <button class="nav-btn" type="button" data-next="q5" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q5">
+        <div>
+          <div class="progress">05 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">一个稀松平常的下午，您独自在家，更愿意怎样度过？</h2>
+            <div class="options" data-question="q5">
+              <button class="option" type="button" data-value="A. 躺在沙发上，看书、喝咖啡，感受时间慢慢流过">
+                <span class="option-letter">A</span>
+                <span class="option-text">躺在沙发上，看书、喝咖啡，感受时间慢慢流过</span>
+              </button>
+              <button class="option" type="button" data-value="B. 难得悠闲，收拾家里，让物件各归其位">
+                <span class="option-letter">B</span>
+                <span class="option-text">难得悠闲，收拾家里，让物件各归其位</span>
+              </button>
+              <button class="option" type="button" data-value="C. 约上三两好友来家里做客，饮茶或小酌，围坐闲谈">
+                <span class="option-letter">C</span>
+                <span class="option-text">约上三两好友来家里做客，饮茶或小酌，围坐闲谈</span>
+              </button>
+              <button class="option" type="button" data-value="D. 出门逛逛，挑些花束与小物，为家中增添几分新意">
+                <span class="option-letter">D</span>
+                <span class="option-text">出门逛逛，挑些花束与小物，为家中增添几分新意</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q4">BACK</button>
+          <button class="nav-btn" type="button" data-next="q6" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q6">
+        <div>
+          <div class="progress">06 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">回想您之前的居所，哪一种遗憾最为接近？</h2>
+            <div class="options" data-question="q6">
+              <button class="option" type="button" data-value="A. 当时追求流行的装饰风格，如今回看已有些过时">
+                <span class="option-letter">A</span>
+                <span class="option-text">当时追求流行的装饰风格，如今回看已有些过时</span>
+              </button>
+              <button class="option" type="button" data-value="B. 单看每个地方都还行，但放在一起不太统一">
+                <span class="option-letter">B</span>
+                <span class="option-text">单看每个地方都还行，但放在一起不太统一</span>
+              </button>
+              <button class="option" type="button" data-value="C. 忽略了空间布局、收纳或日常使用，住久了才发现不够合理">
+                <span class="option-letter">C</span>
+                <span class="option-text">忽略了空间布局、收纳或日常使用，住久了才发现不够合理</span>
+              </button>
+              <button class="option" type="button" data-value="D. 好像什么都没大问题，但也没有真正留下什么喜欢的感觉">
+                <span class="option-letter">D</span>
+                <span class="option-text">好像什么都没大问题，但也没有真正留下什么喜欢的感觉</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q5">BACK</button>
+          <button class="nav-btn" type="button" data-next="q7" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q7">
+        <div>
+          <div class="progress">07 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">本次项目中，哪些内容已经确定不会再做调整？</h2>
+            <div class="options" data-question="q7">
+              <button class="option" type="button" data-value="A. 平面布局：布局、房间功能和主要动线已经确定，不会修改">
+                <span class="option-letter">A</span>
+                <span class="option-text">平面布局：布局、房间功能和主要动线已经确定，不会修改</span>
+              </button>
+              <button class="option" type="button" data-value="B. 现有施工：现场已经施工或完工的部分，不会进行返工">
+                <span class="option-letter">B</span>
+                <span class="option-text">现有施工：现场已经施工或完工的部分，不会进行返工</span>
+              </button>
+              <button class="option" type="button" data-value="C. 局部可调：设计已完成但尚未施工，如果更加合理，可以局部调整">
+                <span class="option-letter">C</span>
+                <span class="option-text">局部可调：设计已完成但尚未施工，如果更加合理，可以局部调整</span>
+              </button>
+              <button class="option" type="button" data-value="D. 都可重看：没有绝对不能改动的部分，只要更加合理，都可以重新判断">
+                <span class="option-letter">D</span>
+                <span class="option-text">都可重看：没有绝对不能改动的部分，只要更加合理，都可以重新判断</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q6">BACK</button>
+          <button class="nav-btn" type="button" data-next="q8" disabled>NEXT</button>
+        </nav>
+      </section>
+
+      <section class="screen question-screen" data-screen="q8">
+        <div>
+          <div class="progress">08 / 08</div>
+          <div class="question-body">
+            <h2 class="question-title">这次让您觉得需要为居所进行一次空间诊断，最直接的原因是什么？</h2>
+            <div class="options" data-question="q8">
+              <button class="option" type="button" data-value="A. 看了很多参考图，越看越乱，整体方向开始不确定">
+                <span class="option-letter">A</span>
+                <span class="option-text">看了很多参考图，越看越乱，整体方向开始不确定</span>
+              </button>
+              <button class="option" type="button" data-value="B. 设计方案已经完成，但自己或家人一直难以拍板">
+                <span class="option-letter">B</span>
+                <span class="option-text">设计方案已经完成，但自己或家人一直难以拍板</span>
+              </button>
+              <button class="option" type="button" data-value="C. 效果图看起来不错，但总觉得和真实生活之间隔着一层，担心最后落地不一致">
+                <span class="option-letter">C</span>
+                <span class="option-text">效果图看起来不错，但总觉得和真实生活之间隔着一层，担心最后落地不一致</span>
+              </button>
+              <button class="option" type="button" data-value="D. 项目已经进入施工阶段，担心现在轻易下判断，后面代价会更高">
+                <span class="option-letter">D</span>
+                <span class="option-text">项目已经进入施工阶段，担心现在轻易下判断，后面代价会更高</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <nav class="nav" aria-label="question navigation">
+          <button class="nav-btn ready" type="button" data-back="q7">BACK</button>
+          <button class="nav-btn" type="button" data-next="materials" disabled>查看资料提交说明</button>
+        </nav>
+      </section>
+
+      <section class="screen reading-screen" data-screen="materials">
+        <div>
+          <h2 class="section-title serif">Materials</h2>
+          <p class="quiet-copy">填完基础信息后，请通过微信完整提交以下资料。资料不需要按照顺序发送，完整即可。</p>
+          <ul class="material-list">
+            <li>户型图 / 原始平面图</li>
+            <li>现场照片或视频</li>
+            <li>已有设计资料</li>
+            <li>喜欢的参考图 3-10 张</li>
+            <li>不喜欢的反面参考图 1-3 张（如有）</li>
+            <li>已确定不会再改的内容说明（如有）</li>
+          </ul>
+          <button class="check-row" type="button" data-check="materials">
+            <span class="box" aria-hidden="true"></span>
+            <span>我已了解，稍后会通过微信完整提交资料</span>
+          </button>
+        </div>
+        <nav class="nav" aria-label="materials navigation">
+          <button class="nav-btn ready" type="button" data-back="q2">BACK</button>
+          <button class="nav-btn" type="button" data-next="consent" disabled>CONTINUE</button>
+        </nav>
+      </section>
+
+      <section class="screen reading-screen" data-screen="consent">
+        <div>
+          <h2 class="section-title serif">Consent</h2>
+          <p class="quiet-copy">请您在提交问卷前仔细阅读以下服务说明。勾选“已知悉并同意”后，视为您已充分理解本服务的交付方式、退款边界与售后规则。</p>
+          <div class="consent-copy">
+            <p>本服务为一对一专属居所空间诊断服务，商家将依据本人提交的户型图、现场照片、现有设计方案、参考图及问卷信息，定制撰写专属 PDF 空间诊断报告。该服务属于按客户资料定制完成的非标准化服务，不属于通用商品，不适用七天无理由退货规则。</p>
+            <ol>
+              <li>平台订单付款完成，且本人提交完整诊断资料后，商家将在约定周期内启动资料分析与报告撰写工作。</li>
+              <li>商家完成专属 PDF 空间诊断报告交付后，服务视为已履约完成。报告交付后，如因个人审美变化、装修计划变动、已不再需要报告等主观原因，不支持退款。</li>
+              <li>如本人在商家已开始资料分析、报告撰写，但尚未完成交付前单方面终止服务，双方可根据商家已投入的人工工作量、资料分析进度和报告完成程度协商处理；已实际发生的定制服务成本不予退还，未发生部分可协商退还。</li>
+              <li>如报告内容与本人提交的原始户型、资料或明确需求存在明显不符，或关键结论存在较大错误，商家将提供一次免费修订。若因商家原因导致服务无法按约定完成，双方按平台规则及相关法律规定协商处理。</li>
+            </ol>
+            <p>本人勾选即表示：已阅读、理解并同意以上服务说明，自愿提交问卷并接受本服务规则。</p>
+          </div>
+          <button class="check-row" type="button" data-check="consent">
+            <span class="box" aria-hidden="true"></span>
+            <span>我已知悉并同意</span>
+          </button>
+        </div>
+        <nav class="nav" aria-label="consent navigation">
+          <button class="nav-btn ready" type="button" data-back="materials">BACK</button>
+          <button class="nav-btn" type="button" data-next="success" disabled>SUBMIT</button>
+        </nav>
+      </section>
+
+      <section class="screen success-screen" data-screen="success">
+        <h2 class="success-title">内容信息已提交</h2>
+        <p class="quiet-copy">感谢您的时间。下面请通过微信提供以下资料。资料完整后，我们会基于您提交的信息，开始我们的工作。</p>
+        <ul class="material-list">
+          <li>户型图 / 原始平面图</li>
+          <li>现场照片或视频</li>
+          <li>已有设计资料</li>
+          <li>喜欢的参考图 3-10 张</li>
+          <li>不喜欢的反面参考图 1-3 张（如有）</li>
+          <li>已确定不会再改的内容说明（如有）</li>
+        </ul>
+
+        <article class="receipt" id="receiptPreview" aria-label="content receipt preview">
+          <h2 class="receipt-brand serif">Space Diagnosis</h2>
+          <h3>内容信息回执</h3>
+          <p class="receipt-time">2026.06.07  20:40</p>
+
+          <section class="receipt-item">
+            <span class="receipt-num">01</span>
+            <p class="receipt-question">这间居所对您来说，最接近哪一种意义？</p>
+            <p class="receipt-answer" data-receipt="q1">A. 长期陪伴：希望它有质感、有沉淀，住很多年也不过时</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">02</span>
+            <p class="receipt-question">这间居所主要会服务谁？</p>
+            <p class="receipt-answer" data-receipt="q2">C. 我和伴侣，以及孩子</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">03</span>
+            <p class="receipt-question">项目目前处于哪一阶段？</p>
+            <p class="receipt-answer" data-receipt="q3">尚未选择</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">04</span>
+            <p class="receipt-question">如果全家人一起投票，只能选择一个旅行目的地，最后更可能会选择哪里？</p>
+            <p class="receipt-answer" data-receipt="q4">尚未选择</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">05</span>
+            <p class="receipt-question">一个稀松平常的下午，您独自在家，更愿意怎样度过？</p>
+            <p class="receipt-answer" data-receipt="q5">尚未选择</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">06</span>
+            <p class="receipt-question">回想您之前的居所，哪一种遗憾最为接近？</p>
+            <p class="receipt-answer" data-receipt="q6">尚未选择</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">07</span>
+            <p class="receipt-question">本次项目中，哪些内容已经确定不会再做调整？</p>
+            <p class="receipt-answer" data-receipt="q7">尚未选择</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">08</span>
+            <p class="receipt-question">这次让您觉得需要为居所进行一次空间诊断，最直接的原因是什么？</p>
+            <p class="receipt-answer" data-receipt="q8">尚未选择</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">资料说明</span>
+            <p class="receipt-answer">已了解，稍后会通过微信完整提交资料</p>
+          </section>
+
+          <section class="receipt-item">
+            <span class="receipt-num">知情确认</span>
+            <p class="receipt-answer">已知悉并同意服务说明</p>
+          </section>
+        </article>
+
+        <img class="receipt-image" id="receiptImage" alt="内容信息回执长图预览" hidden>
+
+        <button class="save-btn" type="button" id="saveBtn">保存</button>
+        <p class="save-note" id="saveNote" hidden>如未自动保存，请长按打开的图片保存。</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const storageKey = "limmy-space-diagnosis-v1";
+
+    const state = {
+      q1: "",
+      q2: "",
+      q3: "",
+      q4: "",
+      q5: "",
+      q6: "",
+      q7: "",
+      q8: "",
+      materials: false,
+      consent: false,
+      current: "home",
+      direction: "next"
+    };
+
+    const screens = [...document.querySelectorAll(".screen")];
+    let latestReceiptDataUrl = "";
+
+    function saveState() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+        Object.assign(state, saved);
+      } catch (error) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+
+    function showScreen(name, direction = "next") {
+      state.current = name;
+      screens.forEach((screen) => {
+        const isActive = screen.dataset.screen === name;
+        screen.classList.toggle("active", isActive);
+        screen.classList.toggle("back", isActive && direction === "back");
+      });
+      window.scrollTo({ top: 0, behavior: "instant" });
+      if (name === "success") {
+        renderReceiptImage();
+      }
+      saveState();
+    }
+
+    function setReady(button, ready) {
+      button.disabled = !ready;
+      button.classList.toggle("ready", ready);
+      button.classList.toggle("dark", ready);
+    }
+
+    function updateReceipt() {
+      Object.entries({
+        q1: state.q1,
+        q2: state.q2,
+        q3: state.q3,
+        q4: state.q4,
+        q5: state.q5,
+        q6: state.q6,
+        q7: state.q7,
+        q8: state.q8
+      }).forEach(([key, value]) => {
+        const target = document.querySelector(`[data-receipt="${key}"]`);
+        if (target && value) target.textContent = value;
+      });
+    }
+
+    const questionText = {
+      q1: "这间居所对您来说，最接近哪一种意义？",
+      q2: "这间居所主要会服务谁？",
+      q3: "项目目前处于哪一阶段？",
+      q4: "如果全家人一起投票，只能选择一个旅行目的地，最后更可能会选择哪里？",
+      q5: "一个稀松平常的下午，您独自在家，更愿意怎样度过？",
+      q6: "回想您之前的居所，哪一种遗憾最为接近？",
+      q7: "本次项目中，哪些内容已经确定不会再做调整？",
+      q8: "这次让您觉得需要为居所进行一次空间诊断，最直接的原因是什么？"
+    };
+
+    function wrapText(ctx, text, maxWidth) {
+      const lines = [];
+      let current = "";
+      Array.from(text).forEach((char) => {
+        const test = current + char;
+        if (ctx.measureText(test).width > maxWidth && current) {
+          lines.push(current);
+          current = char;
+        } else {
+          current = test;
+        }
+      });
+      if (current) lines.push(current);
+      return lines;
+    }
+
+    function drawWrapped(ctx, text, x, y, maxWidth, lineHeight) {
+      const lines = wrapText(ctx, text, maxWidth);
+      lines.forEach((line, index) => {
+        ctx.fillText(line, x, y + index * lineHeight);
+      });
+      return y + lines.length * lineHeight;
+    }
+
+    function buildReceiptRows() {
+      const rows = Object.keys(questionText).map((key, index) => ({
+        number: String(index + 1).padStart(2, "0"),
+        question: questionText[key],
+        answer: state[key] || "尚未选择"
+      }));
+
+      rows.push({
+        number: "资料说明",
+        question: "",
+        answer: "已了解，稍后会通过微信完整提交资料"
+      });
+
+      rows.push({
+        number: "知情确认",
+        question: "",
+        answer: "已知悉并同意服务说明"
+      });
+
+      return rows;
+    }
+
+    function formatTime(date) {
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}  ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function createReceiptDataUrl() {
+      const scale = 2;
+      const width = 760;
+      const padding = 64;
+      const contentWidth = width - padding * 2;
+      const rows = buildReceiptRows();
+      const measureCanvas = document.createElement("canvas");
+      const measureCtx = measureCanvas.getContext("2d");
+      let height = 0;
+
+      height += 72;
+      height += 126;
+      height += 34;
+      height += 34;
+      height += 30;
+
+      rows.forEach((row) => {
+        height += 28;
+        if (row.question) {
+          measureCtx.font = "26px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+          height += wrapText(measureCtx, row.question, contentWidth).length * 42 + 12;
+        }
+        measureCtx.font = "28px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+        height += wrapText(measureCtx, row.answer, contentWidth).length * 44 + 32;
+        height += 1;
+      });
+
+      height += 60;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = "#f3f3f0";
+      ctx.fillRect(0, 0, width, height);
+
+      let y = 72;
+      ctx.fillStyle = "#1b1c19";
+      ctx.font = "300 58px 'Segoe UI Light', 'Segoe UI', sans-serif";
+      ctx.textBaseline = "top";
+      y = drawWrapped(ctx, "Space Diagnosis", padding, y, 300, 58);
+      y += 34;
+
+      ctx.font = "400 28px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+      ctx.fillText("内容信息回执", padding, y);
+      y += 36;
+
+      ctx.fillStyle = "#73746f";
+      ctx.font = "24px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+      ctx.fillText(formatTime(new Date()), padding, y);
+      y += 44;
+
+      rows.forEach((row) => {
+        ctx.strokeStyle = "#d8d8d1";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+        y += 28;
+
+        ctx.fillStyle = "#73746f";
+        ctx.font = "22px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+        ctx.fillText(row.number, padding, y);
+        y += 34;
+
+        if (row.question) {
+          ctx.fillStyle = "#1b1c19";
+          ctx.font = "26px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+          y = drawWrapped(ctx, row.question, padding, y, contentWidth, 42);
+          y += 12;
+        }
+
+        ctx.fillStyle = "#1b1c19";
+        ctx.font = "28px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
+        y = drawWrapped(ctx, row.answer, padding, y, contentWidth, 44);
+        y += 32;
+      });
+
+      return canvas.toDataURL("image/jpeg", 0.94);
+    }
+
+    function renderReceiptImage() {
+      updateReceipt();
+      latestReceiptDataUrl = createReceiptDataUrl();
+      const image = document.getElementById("receiptImage");
+      const preview = document.getElementById("receiptPreview");
+      image.src = latestReceiptDataUrl;
+      image.hidden = false;
+      preview.classList.add("is-hidden");
+    }
+
+    function restoreUI() {
+      Object.entries(state).forEach(([key, value]) => {
+        if (!key.startsWith("q") || !value) return;
+        const group = document.querySelector(`[data-question="${key}"]`);
+        if (!group) return;
+        const option = [...group.querySelectorAll(".option")].find((item) => item.dataset.value === value);
+        if (option) option.classList.add("selected");
+        const next = group.closest(".screen").querySelector("[data-next]");
+        if (next) setReady(next, true);
+      });
+
+      ["materials", "consent"].forEach((key) => {
+        const button = document.querySelector(`[data-check="${key}"]`);
+        if (!button) return;
+        button.classList.toggle("checked", Boolean(state[key]));
+        const next = button.closest(".screen").querySelector("[data-next]");
+        if (next) setReady(next, Boolean(state[key]));
+      });
+
+      updateReceipt();
+      showScreen(state.current || "home");
+    }
+
+    document.querySelectorAll("[data-go]").forEach((button) => {
+      button.addEventListener("click", () => showScreen(button.dataset.go));
+    });
+
+    document.querySelectorAll("[data-back]").forEach((button) => {
+      button.addEventListener("click", () => showScreen(button.dataset.back, "back"));
+    });
+
+    document.querySelectorAll("[data-next]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.disabled) return;
+        updateReceipt();
+        showScreen(button.dataset.next);
+      });
+    });
+
+    document.querySelectorAll(".options").forEach((group) => {
+      group.addEventListener("click", (event) => {
+        const option = event.target.closest(".option");
+        if (!option) return;
+        const key = group.dataset.question;
+        state[key] = option.dataset.value;
+        group.querySelectorAll(".option").forEach((item) => item.classList.remove("selected"));
+        option.classList.add("selected");
+        const next = group.closest(".screen").querySelector("[data-next]");
+        setReady(next, true);
+        saveState();
+      });
+    });
+
+    document.querySelectorAll("[data-check]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.check;
+        state[key] = !state[key];
+        button.classList.toggle("checked", state[key]);
+        const next = button.closest(".screen").querySelector("[data-next]");
+        setReady(next, state[key]);
+        saveState();
+      });
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", (event) => {
+      const dataUrl = latestReceiptDataUrl || createReceiptDataUrl();
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `Space-Diagnosis-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      const note = document.getElementById("saveNote");
+      note.hidden = false;
+      event.currentTarget.textContent = "已保存";
+      setTimeout(() => {
+        event.currentTarget.textContent = "保存";
+      }, 1600);
+    });
+
+    loadState();
+    restoreUI();
+  </script>
+</body>
+</html>
