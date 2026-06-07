@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -281,8 +281,10 @@
     }
 
     .reading-screen {
-      padding-top: 66px;
+      padding-top: min(14dvh, 50px);
       padding-bottom: 24px;
+      justify-content: space-between;
+      min-height: calc(100dvh - 56px - env(safe-area-inset-bottom));
     }
 
     .section-title {
@@ -314,13 +316,13 @@
     }
 
     .check-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin: 10px 0 30px;
-      color: var(--ink);
-      font-size: 14px;
-      line-height: 1.62;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 10px 0 16px;
+        color: var(--ink);
+        font-size: 14px;
+        line-height: 1.62;
       cursor: pointer;
     }
 
@@ -872,11 +874,11 @@
             <p class="receipt-answer">已了解，稍后会通过微信完整提交资料</p>
           </section>
 
-          <section class="receipt-item">
-            <span class="receipt-num">知情确认</span>
-            <p class="receipt-answer">已知悉并同意服务说明</p>
-          </section>
-        </article>
+           <section class="receipt-item">
+              <span class="receipt-num">服务说明知情确认</span>
+             <p class="receipt-answer">已知悉并同意服务说明</p>
+           </section>
+          </article>
 
         <img class="receipt-image" id="receiptImage" alt="内容信息回执长图预览" hidden>
 
@@ -1004,13 +1006,13 @@
         answer: "已了解，稍后会通过微信完整提交资料"
       });
 
-      rows.push({
-        number: "知情确认",
-        question: "",
-        answer: "已知悉并同意服务说明"
-      });
+       rows.push({
+          number: "服务说明知情确认",
+         question: "",
+         answer: "已知悉并同意服务说明"
+       });
 
-      return rows;
+        return rows;
     }
 
     function formatTime(date) {
@@ -1060,10 +1062,10 @@
 
       let y = 72;
       ctx.fillStyle = "#1b1c19";
-      ctx.font = "300 58px 'Segoe UI Light', 'Segoe UI', sans-serif";
-      ctx.textBaseline = "top";
-      y = drawWrapped(ctx, "Space Diagnosis", padding, y, 300, 58);
-      y += 34;
+       ctx.font = "300 58px 'Segoe UI Light', 'Segoe UI', sans-serif";
+       ctx.textBaseline = "top";
+       y = drawWrapped(ctx, "Space Diagnosis", padding, y, 600, 58);
+       y += 34;
 
       ctx.font = "400 28px -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Microsoft YaHei', sans-serif";
       ctx.fillText("内容信息回执", padding, y);
