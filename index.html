@@ -931,7 +931,7 @@
       });
       window.scrollTo({ top: 0, behavior: "instant" });
       if (name === "success") {
-        renderReceiptImage();
+        updateReceipt();
       }
       saveState();
     }
@@ -1193,7 +1193,13 @@
     });
 
     document.getElementById("saveBtn").addEventListener("click", (event) => {
-      const dataUrl = latestReceiptDataUrl || createReceiptDataUrl();
+      const dataUrl = createReceiptDataUrl();
+      latestReceiptDataUrl = dataUrl;
+      const image = document.getElementById("receiptImage");
+      const preview = document.getElementById("receiptPreview");
+      image.src = dataUrl;
+      image.hidden = false;
+      preview.classList.add("is-hidden");
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `Space-Diagnosis-${Date.now()}.jpg`;
