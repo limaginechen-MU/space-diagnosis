@@ -1116,7 +1116,19 @@
       preview.classList.add("is-hidden");
     }
 
-    function restoreUI() {
+   function restoreUI() {
+      // URL parameter ?reset clears saved state for preview purposes
+      if (window.location.search.includes("reset")) {
+        localStorage.removeItem(storageKey);
+        Object.keys(state).forEach((key) => {
+          if (typeof state[key] === "string") state[key] = "";
+          else if (typeof state[key] === "boolean") state[key] = false;
+        });
+        state.current = "home";
+        showScreen("home");
+        return;
+      }
+
       Object.entries(state).forEach(([key, value]) => {
         if (!key.startsWith("q") || !value) return;
         const group = document.querySelector(`[data-question="${key}"]`);
